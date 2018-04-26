@@ -248,7 +248,7 @@ public final class DeviceEndpoint {
      * @param device the new device.
      * @return the JSON message representing the action.
      */
-    private String getCreateDeviceMessageJson(Device device) {
+    String getCreateDeviceMessageJson(Device device) {
         return String.format(CREATE_DEVICE_MESSAGE_FORMAT,
                              JsonDefinitions.SUCCEEDED,
                              true,
@@ -275,7 +275,7 @@ public final class DeviceEndpoint {
      * @param device the successfully removed device.
      * @return the JSON message.
      */
-    private String getRemoveDeviceSuccessMessageJson(Device device) {
+    String getRemoveDeviceSuccessMessageJson(Device device) {
         String message = 
                 "Device \\\"" + 
                 device.getName() + 
@@ -298,7 +298,7 @@ public final class DeviceEndpoint {
      * @param deviceId the unsuccessfully removed device.
      * @return the JSON message.
      */
-    private String getRemoveDeviceFailureMessageJson(int deviceId) {
+    String getRemoveDeviceFailureMessageJson(int deviceId) {
         return String.format(REMOVE_DEVICE_MESSAGE_FORMAT,
                              JsonDefinitions.SUCCEEDED,
                              false,
@@ -316,7 +316,7 @@ public final class DeviceEndpoint {
      * @param device the target device.
      * @return the JSON text.
      */
-    private String getUpdateDeviceInformationSuccessMessageJson(Device device) {
+    String getUpdateDeviceInformationSuccessMessageJson(Device device) {
         String message =
                 "Information of the device \\\"" +
                 device.getName() +
@@ -345,7 +345,7 @@ public final class DeviceEndpoint {
      * @param device the target device.
      * @return the JSON text.
      */
-    private String getUpdateDeviceInformationFailureMessageJson(int deviceId) {
+    String getUpdateDeviceInformationFailureMessageJson(int deviceId) {
         String message = "There is no device with ID " + deviceId + ".";
         
         return String.format(UPDATE_DEVICE_FAILURE_INFORMATION_MESSAGE_FORMAT,
