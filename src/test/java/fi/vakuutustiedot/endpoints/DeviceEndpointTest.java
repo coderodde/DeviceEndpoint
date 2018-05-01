@@ -1,5 +1,6 @@
 package fi.vakuutustiedot.endpoints;
 
+import javax.swing.UIManager;
 import org.junit.Test;
 
 /**
@@ -21,5 +22,6 @@ public class DeviceEndpointTest {
     public void testShowJSON() {
         DeviceEndpoint de = new DeviceEndpoint();
         System.out.println(de.getRemoveDeviceFailureMessageJson(11));
+        System.out.println(de.getCreateDeviceMessageJson(device));
     }
 }

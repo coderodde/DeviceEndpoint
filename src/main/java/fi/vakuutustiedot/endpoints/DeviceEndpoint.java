@@ -38,6 +38,7 @@ public final class DeviceEndpoint {
             private static final String CREATE = "create";
             private static final String UPDATE = "update";
             private static final String REMOVE = "remove";
+            private static final String UNLOAD = "unload";
         }
     }
     
@@ -97,6 +98,7 @@ public final class DeviceEndpoint {
     
     @OnOpen
     public void open(Session session) {
+        session.setMaxIdleTimeout(-1L);
         SESSIONS.add(session);
         
         // Send the new user all the current devices:
@@ -108,16 +110,6 @@ public final class DeviceEndpoint {
                 
             }
         }
-    }
-    
-    @OnClose
-    public void close(Session session) {
-        SESSIONS.remove(session);
-    }
-    
-    @OnError
-    public void onError(Throwable error) {
-        
     }
     
     @OnMessage
@@ -138,6 +130,10 @@ public final class DeviceEndpoint {
                     
                 case JsonDefinitions.Actions.REMOVE:
                     handleRemoveDeviceMessage(jsonMessage);
+                    break;
+                    
+                case JsonDefinitions.Actions.UNLOAD:
+                    handleUnload(session);
                     break;
                     
                 default:
@@ -225,6 +221,16 @@ public final class DeviceEndpoint {
             String jsonMessage = getRemoveDeviceSuccessMessageJson(device);
             broadcastMessageToAllConnectedSessions(jsonMessage);
         }
+    }
+    
+    /**
+     * This method is called when the user leaves the device list page, and 
+     * therefore we need to remove the associated session from the session list.
+     * 
+     * @param session the session to remove.
+     */
+    private void handleUnload(Session session) {
+        SESSIONS.remove(session);
     }
     
     /**
