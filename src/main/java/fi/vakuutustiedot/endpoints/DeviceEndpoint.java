@@ -2,10 +2,12 @@ package fi.vakuutustiedot.endpoints;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -90,9 +92,82 @@ public final class DeviceEndpoint {
     
     // Used for creating IDs for the devices.
     private static int deviceCounter = 0;
-    private static final Set<Session> SESSIONS = new HashSet<>();
+    private static final Set<Session> SESSIONS = 
+            Collections.newSetFromMap(new ConcurrentHashMap<Session, Boolean>());
+    
     private static final Map<Integer, Device> MAP_DEVICE_ID_TO_DEVICE = 
             new HashMap<>();
+    
+    private static PingThread pingThread;
+    
+    /**
+     * This thread automatically pings all the clients every 10 seconds.
+     */
+    private static final class PingThread extends Thread {
+        
+        private final Set<Session> sessions;
+        private volatile boolean exit = false;
+        
+        PingThread(Set<Session> sessions) {
+            this.sessions = sessions;
+        }
+        
+        void requestExit() {
+            exit = true;
+        }
+        
+        @Override
+        public void run() {
+            while (true) {
+                // Sleep 10 seconds:
+                for (int i = 0; i < 10; i++) {
+                    if (exit) {
+                        return;
+                    }
+                    
+                    try {
+                        Thread.sleep(10_000L);
+                    } catch (InterruptedException ex) {
+
+                    }
+                }
+                
+                // Send ping to all the sessions:
+                for (Session session : sessions) {
+                    try {
+                        session.getBasicRemote()
+                               .sendPing(ByteBuffer.wrap("".getBytes()));
+                    } catch (IOException ex) {
+                        
+                    }
+                }
+            }
+        }
+    }
+    
+    static {
+        pingThread = new PingThread(SESSIONS);
+        pingThread.start();
+    }
+    
+    @Override
+    protected void finalize() {
+        pingThread.requestExit();
+        
+        try {
+            pingThread.join();
+        } catch (InterruptedException ex) {
+            
+        }
+        
+        for (Session session : SESSIONS) {
+            try {
+                session.close();
+            } catch (IOException ex) {
+                
+            }
+        }
+    }
     
     @OnOpen
     public void open(Session session) {
@@ -111,7 +186,8 @@ public final class DeviceEndpoint {
     }
     
     @OnMessage
-    public void handleMessage(String message, Session session) {
+    public void handleMessage(String message, Session session) 
+    throws IOException {
         try (JsonReader reader = 
                 Json.createReader(new StringReader(message))) {
             JsonObject jsonMessage = reader.readObject();
@@ -139,6 +215,8 @@ public final class DeviceEndpoint {
                             "Unknown action: \"" + actionName + "\".");
             }
         }
+        
+        session.getBasicRemote().sendPing(ByteBuffer.wrap("sendPing".getBytes()));
     }
     
     /**
